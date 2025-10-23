@@ -31,7 +31,7 @@ function App() {
           </div>
         </div>
       </Layout.Header>
-      <Layout.Content style={{ padding: 16, height: 'calc(100vh - 64px)' }}>
+      <Layout.Content style={{ height: 'calc(100vh - 64px)' }}>
         <Routes>
           <Route path="/" element={<Navigate to="/game" replace />} />
           <Route path="/game" element={<Game />} />
