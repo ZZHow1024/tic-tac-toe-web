@@ -211,7 +211,7 @@ export default function Game() {
     return (
         <div style={{
             padding: '20px',
-            minHeight: '100vh',
+            height: 'calc(100vh - 115px)',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -306,7 +306,7 @@ export default function Game() {
                     </h2>
 
                     {/* 游戏状态提示 */}
-                    {gameStarted && (
+                    {(
                         <div style={{
                             display: 'flex',
                             justifyContent: 'space-between',
@@ -375,8 +375,8 @@ export default function Game() {
                                 disabled={gameOver || cell !== null || isAIThinking}
                                 className={cell ? 'cell-enter' : ''}
                                 style={{
-                                    width: '100%',
-                                    height: '100%',
+                                    width: '100px',
+                                    height: '100px',
                                     fontSize: '52px',
                                     fontWeight: 'bold',
                                     border: 'none',

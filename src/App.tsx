@@ -18,7 +18,7 @@ function App() {
   }
 
   return (
-    <Layout style={{ height: '100vh' }}>
+    <Layout>
       <Layout.Header>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '0 16px' }}>
           <span style={{ fontWeight: 600 }}>MiniMax 算法演示</span>
@@ -31,7 +31,7 @@ function App() {
           </div>
         </div>
       </Layout.Header>
-      <Layout.Content style={{ height: 'calc(100vh - 64px)' }}>
+      <Layout.Content>
         <Routes>
           <Route path="/" element={<Navigate to="/game" replace />} />
           <Route path="/game" element={<Game />} />
