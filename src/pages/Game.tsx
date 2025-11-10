@@ -368,49 +368,64 @@ export default function Game() {
                         margin: '0 auto 25px',
                         boxShadow: 'inset 0 4px 8px rgba(0,0,0,0.1)'
                     }}>
-                        {board.map((cell, index) => (
-                            <button
-                                key={index}
-                                onClick={() => handleClick(index)}
-                                disabled={gameOver || cell !== null || isAIThinking}
-                                className={cell ? 'cell-enter' : ''}
-                                style={{
-                                    width: '100px',
-                                    height: '100px',
-                                    fontSize: '52px',
-                                    fontWeight: 'bold',
-                                    border: 'none',
-                                    borderRadius: '12px',
-                                    background: winningLine.includes(index)
-                                        ? 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)'
-                                        : cell ? '#f9f9f9' : 'white',
-                                    cursor: (cell || gameOver || isAIThinking) ? 'not-allowed' : 'pointer',
-                                    color: cell === 'X' ? '#0052d9' : '#e34d59',
-                                    transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    boxShadow: '0 4px 8px rgba(0,0,0,0.15)',
-                                    position: 'relative',
-                                    overflow: 'hidden'
-                                }}
-                                className={winningLine.includes(index) ? 'winning-cell' : ''}
-                                onMouseEnter={(e) => {
-                                    if (!cell && !gameOver && !isAIThinking) {
-                                        e.currentTarget.style.background = 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)';
-                                        e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,82,217,0.3)';
-                                    }
-                                }}
-                                onMouseLeave={(e) => {
-                                    if (!cell && !gameOver && !isAIThinking) {
-                                        e.currentTarget.style.background = 'white';
-                                        e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
-                                    }
-                                }}
-                            >
-                                {cell}
-                            </button>
-                        ))}
+                        {board.map((cell, index) => {
+                            const isCellDisabled = gameOver || cell !== null || isAIThinking
+                            const cellClassName = [
+                                cell ? 'cell-enter' : '',
+                                winningLine.includes(index) ? 'winning-cell' : ''
+                            ]
+                                .filter(Boolean)
+                                .join(' ')
+
+                            return (
+                                <button
+                                    key={index}
+                                    onClick={() => handleClick(index)}
+                                    disabled={isCellDisabled}
+                                    className={cellClassName}
+                                    style={{
+                                        width: '100px',
+                                        height: '100px',
+                                        fontSize: '52px',
+                                        fontWeight: 'bold',
+                                        border: 'none',
+                                        borderRadius: '12px',
+                                        background: winningLine.includes(index)
+                                            ? 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)'
+                                            : cell ? '#f9f9f9' : 'white',
+                                        cursor: isCellDisabled ? 'not-allowed' : 'pointer',
+                                        color: cell === 'X' ? '#0052d9' : '#e34d59',
+                                        transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        boxShadow: '0 4px 8px rgba(0,0,0,0.15)',
+                                        position: 'relative',
+                                        overflow: 'hidden'
+                                    }}
+                            onMouseEnter={(event) => {
+                                if (cell || gameOver || isAIThinking) {
+                                    return
+                                }
+
+                                const currentTarget = event.currentTarget
+                                currentTarget.style.background = 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)'
+                                currentTarget.style.boxShadow = '0 8px 16px rgba(0,82,217,0.3)'
+                            }}
+                            onMouseLeave={(event) => {
+                                if (cell || gameOver || isAIThinking) {
+                                    return
+                                }
+
+                                const currentTarget = event.currentTarget
+                                currentTarget.style.background = 'white'
+                                currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)'
+                            }}
+                                >
+                                    {cell}
+                                </button>
+                            )
+                        })}
                     </div>
                 </div>
 
@@ -454,7 +469,11 @@ export default function Game() {
                         </div>
                         <Radio.Group
                             value={isPlayerFirst}
-                            onChange={setIsPlayerFirst}
+                            onChange={(value) => {
+                                if (typeof value === 'boolean') {
+                                    setIsPlayerFirst(value)
+                                }
+                            }}
                             disabled={gameStarted}
                         >
                             <Radio.Button value={true}>玩家先手 (X)</Radio.Button>

@@ -37,7 +37,7 @@ export default function Demo() {
   const [searchSteps, setSearchSteps] = useState<TreeNode[]>([])
   const [showingAnimation, setShowingAnimation] = useState<boolean>(false)
   const [animationSpeed, setAnimationSpeed] = useState<number>(1000) // 毫秒
-  const animationRef = useRef<NodeJS.Timeout | null>(null)
+  const animationRef = useRef<number | null>(null)
   
   // 拖拽和缩放相关状态
   const [scale, setScale] = useState<number>(1)
@@ -253,7 +253,6 @@ export default function Demo() {
 
   // AI 落子
   const getAIMove = (squares: Board): [number, TreeNode] => {
-    let bestScore = -Infinity
     let bestMove = -1
     let rootNode: TreeNode | null = null
 
@@ -293,28 +292,32 @@ export default function Demo() {
     setCurrentStep(0)
     
     // 清除之前的动画定时器
-    if (animationRef.current) {
-      clearInterval(animationRef.current)
+    if (animationRef.current !== null) {
+      window.clearInterval(animationRef.current)
     }
-    
+
     // 设置新的动画定时器
-    animationRef.current = setInterval(() => {
-      setCurrentStep(prev => {
+    animationRef.current = window.setInterval(() => {
+      setCurrentStep(previousStep => {
         // 确保不超出范围
-        if (prev >= searchSteps.length - 1) {
-          clearInterval(animationRef.current as NodeJS.Timeout)
+        if (previousStep >= searchSteps.length - 1) {
+          if (animationRef.current !== null) {
+            window.clearInterval(animationRef.current)
+            animationRef.current = null
+          }
           setShowingAnimation(false)
           return searchSteps.length - 1
         }
-        return prev + 1
+
+        return previousStep + 1
       })
     }, animationSpeed)
   }
 
   // 停止动画
   const stopAnimation = () => {
-    if (animationRef.current) {
-      clearInterval(animationRef.current)
+    if (animationRef.current !== null) {
+      window.clearInterval(animationRef.current)
       animationRef.current = null
     }
     setShowingAnimation(false)
@@ -551,12 +554,12 @@ export default function Demo() {
   }
 
   // 渲染搜索树节点
-  const renderTreeNode = (node: TreeNode | null, level: number = 0, isCurrentNode: boolean = false) => {
+  const renderTreeNode = (node: TreeNode | null, level: number = 0, isCurrentNode: boolean = false, parentBestChildId: string | null = null) => {
     if (!node) return null
 
     const nodeSize = Math.max(30, 60 - level * 5) // 根据层级调整节点大小
     const isLeaf = node.children.length === 0
-    const isBestMove = node.id === (node.parent?.bestChildId || null)
+    const isBestMove = node.id === parentBestChildId
     
     return (
       <div style={{
@@ -649,7 +652,8 @@ export default function Demo() {
               {renderTreeNode(
                 child, 
                 level + 1, 
-                searchSteps[currentStep]?.id === child.id
+                searchSteps[currentStep]?.id === child.id,
+                node.bestChildId ?? null
               )}
             </div>
           ))}
@@ -788,9 +792,9 @@ export default function Demo() {
   // 清理副作用
   useEffect(() => {
     return () => {
-      if (animationRef.current) {
-        clearInterval(animationRef.current)
-      }
+    if (animationRef.current !== null) {
+      window.clearInterval(animationRef.current)
+    }
     }
   }, [])
 
@@ -979,12 +983,21 @@ export default function Demo() {
             margin: '0 auto 25px',
             boxShadow: 'inset 0 4px 8px rgba(0,0,0,0.1)'
           }}>
-            {board.map((cell, index) => (
+            {board.map((cell, index) => {
+            const isCellDisabled = gameOver || cell !== null || isAIThinking || showingAnimation
+            const cellClassName = [
+              cell ? 'cell-enter' : '',
+              winningLine.includes(index) ? 'winning-cell' : ''
+            ]
+              .filter(Boolean)
+              .join(' ')
+
+            return (
               <button
                 key={index}
                 onClick={() => handleClick(index)}
-                disabled={gameOver || cell !== null || isAIThinking || showingAnimation}
-                className={cell ? 'cell-enter' : ''}
+                disabled={isCellDisabled}
+                className={cellClassName}
                 style={{
                   width: '90px',
                   height: '90px',
@@ -995,7 +1008,7 @@ export default function Demo() {
                   background: winningLine.includes(index)
                     ? 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)'
                     : cell ? '#f9f9f9' : 'white',
-                  cursor: (cell || gameOver || isAIThinking || showingAnimation) ? 'not-allowed' : 'pointer',
+                  cursor: isCellDisabled ? 'not-allowed' : 'pointer',
                   color: cell === 'X' ? '#0052d9' : '#e34d59',
                   transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
                   display: 'flex',
@@ -1005,23 +1018,29 @@ export default function Demo() {
                   position: 'relative',
                   overflow: 'hidden'
                 }}
-                className={winningLine.includes(index) ? 'winning-cell' : ''}
-                onMouseEnter={(e) => {
-                  if (!cell && !gameOver && !isAIThinking && !showingAnimation) {
-                    e.currentTarget.style.background = 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)'
-                    e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,82,217,0.3)'
+                onMouseEnter={(event) => {
+                  if (cell || gameOver || isAIThinking || showingAnimation) {
+                    return
                   }
+
+                  const currentTarget = event.currentTarget
+                  currentTarget.style.background = 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)'
+                  currentTarget.style.boxShadow = '0 8px 16px rgba(0,82,217,0.3)'
                 }}
-                onMouseLeave={(e) => {
-                  if (!cell && !gameOver && !isAIThinking && !showingAnimation) {
-                    e.currentTarget.style.background = 'white'
-                    e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)'
+                onMouseLeave={(event) => {
+                  if (cell || gameOver || isAIThinking || showingAnimation) {
+                    return
                   }
+
+                  const currentTarget = event.currentTarget
+                  currentTarget.style.background = 'white'
+                  currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)'
                 }}
               >
                 {cell}
               </button>
-            ))}
+            )
+          })}
           </div>
 
           {/* 游戏控制 */}
@@ -1038,7 +1057,11 @@ export default function Demo() {
               <h4 style={{ margin: '0 0 10px 0', fontSize: '16px' }}>游戏模式</h4>
               <Radio.Group
                 value={isEndgameMode}
-                onChange={setIsEndgameMode}
+                onChange={(value) => {
+                  if (typeof value === 'boolean') {
+                    setIsEndgameMode(value)
+                  }
+                }}
                 disabled={gameStarted}
               >
                 <Radio.Button value={true}>残局模式</Radio.Button>
@@ -1051,7 +1074,11 @@ export default function Demo() {
                 <h4 style={{ margin: '0 0 10px 0', fontSize: '16px' }}>残局深度</h4>
                 <Radio.Group
                   value={endgameDepth}
-                  onChange={setEndgameDepth}
+                  onChange={(value) => {
+                    if (typeof value === 'number') {
+                      setEndgameDepth(value)
+                    }
+                  }}
                   disabled={gameStarted}
                 >
                   <Radio.Button value={2}>简单 (2步)</Radio.Button>
@@ -1066,7 +1093,11 @@ export default function Demo() {
                 <h4 style={{ margin: '0 0 10px 0', fontSize: '16px' }}>先手选择</h4>
                 <Radio.Group
                   value={isPlayerFirst}
-                  onChange={setIsPlayerFirst}
+                  onChange={(value) => {
+                    if (typeof value === 'boolean') {
+                      setIsPlayerFirst(value)
+                    }
+                  }}
                   disabled={gameStarted}
                 >
                   <Radio.Button value={true}>玩家先手 (X)</Radio.Button>
@@ -1183,7 +1214,11 @@ export default function Demo() {
                 <div style={{ marginBottom: '5px', fontSize: '14px' }}>动画速度</div>
                 <Radio.Group
                   value={animationSpeed}
-                  onChange={setAnimationSpeed}
+                  onChange={(value) => {
+                    if (typeof value === 'number') {
+                      setAnimationSpeed(value)
+                    }
+                  }}
                   disabled={showingAnimation}
                 >
                   <Radio.Button value={2000}>慢速</Radio.Button>
