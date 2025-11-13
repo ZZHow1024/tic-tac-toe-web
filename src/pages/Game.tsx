@@ -216,7 +216,7 @@ export default function Game() {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            background: '#000000',
             position: 'relative',
             overflow: 'hidden'
         }}>

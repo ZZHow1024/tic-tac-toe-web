@@ -804,7 +804,7 @@ export default function Demo() {
       minHeight: 'calc(100vh - 115px)',
       display: 'flex',
       flexDirection: 'column',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      background: '#000000',
       position: 'relative',
       overflow: 'hidden'
     }}>
